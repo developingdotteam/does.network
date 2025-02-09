@@ -1,0 +1,12 @@
+[07-Feb-2025 19:57:28 UTC] PHP Parse error:  syntax error, unexpected token "continue", expecting ")" in /home/wbggltowbg/does.network/counter.php on line 36
+[07-Feb-2025 19:57:40 UTC] PHP Parse error:  syntax error, unexpected token "continue", expecting ")" in /home/wbggltowbg/does.network/counter.php on line 36
+[07-Feb-2025 19:58:28 UTC] PHP Fatal error:  Uncaught ValueError: explode(): Argument #1 ($separator) cannot be empty in /home/wbggltowbg/does.network/counter.php:39
+Stack trace:
+#0 /home/wbggltowbg/does.network/counter.php(39): explode()
+#1 {main}
+  thrown in /home/wbggltowbg/does.network/counter.php on line 39
+[07-Feb-2025 19:58:33 UTC] PHP Fatal error:  Uncaught ValueError: explode(): Argument #1 ($separator) cannot be empty in /home/wbggltowbg/does.network/counter.php:39
+Stack trace:
+#0 /home/wbggltowbg/does.network/counter.php(39): explode()
+#1 {main}
+  thrown in /home/wbggltowbg/does.network/counter.php on line 39

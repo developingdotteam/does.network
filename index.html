@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <meta
+      name="description"
+      content="Check if your internet works using our minimal, custom tool. Determine connectivity status and view your network details. Find IPv4, IPv6, location, ISP, browser, and OS information with a single click."
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta property="og:title" content="does.network" />
+    <meta
+      property="og:description"
+      content="Check if your internet works quickly and easily."
+    />
+    <meta property="og:type" content="website" />
+    <title>does.network</title>
+    <style>
+      /* Base Light Mode Colors */
+      :root {
+        --bg-checking: #fffcdb;
+        --text-checking: #4d362d;
+        --bg-offline: #ffe5eb;
+        --text-offline: #981515;
+        --bg-online: #e3f7e4;
+        --text-online: #1b5e20;
+        --font-primary: "SofiaPro", Arial, sans-serif;
+        --font-bold: "SofiaProBold", Arial, sans-serif;
+        --max-width: 600px;
+        --field-width: 150px;
+        --field-gap: 10px;
+      }
+
+      /* Dark Mode Colors using media query */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-checking: #29270d;
+          --text-checking: #fffcdb;
+          --bg-offline: #4c0a0a;
+          --text-offline: #ffe5eb;
+          --bg-online: #0d2b0d;
+          --text-online: #e3f7e4;
+        }
+      }
+
+      @font-face {
+        font-family: "SofiaPro";
+        src: url("sofiaPro.otf") format("opentype");
+        font-weight: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SofiaProBold";
+        src: url("sofiaProBold.otf") format("opentype");
+        font-weight: bold;
+        font-display: swap;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: var(--font-primary);
+        background-color: var(--bg-checking);
+        color: var(--text-checking);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        position: relative;
+      }
+      main.container {
+        flex: 1;
+        width: 100%;
+        max-width: var(--max-width);
+        padding: 20px;
+        /* Extra padding-bottom so content isn't hidden by bottom tabs */
+        padding-top: 35px;
+        padding-bottom: 50px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        gap: 20px;
+      }
+      .page {
+        display: none;
+        width: 100%;
+      }
+      .active-page {
+        display: block;
+      }
+      .status-message {
+        font-family: var(--font-bold);
+        font-size: 2rem;
+        margin-bottom: 10px;
+      }
+      .check-button {
+        font-family: var(--font-primary);
+        padding: 12px 25px;
+        font-size: 1.125rem;
+        border: none;
+        border-radius: 5px;
+        background-color: currentColor;
+        color: inherit;
+        opacity: 0.5;
+        cursor: not-allowed;
+        transition: transform 0.2s ease;
+      }
+      .check-button.active {
+        opacity: 1;
+        cursor: pointer;
+      }
+      .check-button:hover {
+        transform: scale(1.05);
+      }
+      .info-details {
+        text-align: left;
+        width: 100%;
+        max-width: 600px;
+        margin-top: 20px;
+        line-height: 1.6;
+        font-size: 1rem;
+        padding: 0 10px;
+      }
+      .details-info {
+        display: grid;
+        grid-template-columns: var(--field-width) 1fr;
+        gap: var(--field-gap) 20px;
+        margin-bottom: 15px;
+      }
+      .info-label {
+        font-family: var(--font-bold);
+      }
+      /* Force consistent widths for left fields */
+      .details-info > div:nth-child(odd) {
+        width: var(--field-width);
+      }
+      .details-info > div:nth-child(even) {
+        text-align: right;
+      }
+      .counter {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 10px;
+      }
+      .bottom-tabs {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: inline-flex;
+        /* Background will be updated via JS when the mode changes */
+        background-color: var(--bg-checking);
+        border-radius: 5px;
+        padding: 5px;
+      }
+      .tab-btn {
+        position: relative;
+        font-family: var(--font-primary);
+        font-size: 1rem;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: inherit;
+        padding: 10px 15px;
+        transition: color 0.2s ease;
+      }
+      .tab-btn.disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+      }
+      .underline {
+        position: absolute;
+        bottom: 5px;
+        height: 1.75px;
+        background-color: var(--text-online);
+        transition: left 0.3s ease, width 0.3s ease;
+        pointer-events: none;
+      }
+      strong {
+        font-family: "SofiaProBold", Arial, sans-serif;
+      }
+      button:focus {
+        outline: none;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--text-checking);
+        outline-offset: 1px;
+      }
+      /* Privacy page formatting */
+      #privacyPage h2 {
+        margin-top: 1em;
+      }
+      #privacyPage p {
+        margin-bottom: 1em;
+        text-align: justify;
+      }
+      #privacyPage ul {
+        margin: 0 0 1em 1em;
+      }
+      #privacyPage li {
+        margin-bottom: 0.5em;
+      }
+      #privacyPage a {
+        color: var(--text-online);
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <!-- Usage counter element (hidden if data is not available) -->
+      <div class="counter" id="usageCounter"></div>
+      <div id="checkPage" class="page active-page">
+        <h1
+          id="statusMessage"
+          class="status-message"
+          aria-live="polite"
+          role="status"
+          aria-atomic="true"
+        >
+          Checking If Net Works...
+        </h1>
+        <button
+          id="checkButton"
+          class="check-button inactive"
+          aria-label="Check Internet Connection"
+        >
+          Check
+        </button>
+      </div>
+      <div id="infoPage" class="page" aria-live="polite">
+        <h1 class="status-message">Details</h1>
+        <div id="aboutDetails" class="info-details">
+          <div class="details-info">
+            <div class="info-label">IPv4:</div>
+            <div id="ipv4Field">—</div>
+            <div class="info-label">IPv6:</div>
+            <div id="ipv6Field">—</div>
+            <div class="info-label">Active:</div>
+            <div id="activeIPField">—</div>
+            <div class="info-label">Location:</div>
+            <div id="locationField">—</div>
+            <div class="info-label">Service Provider:</div>
+            <div id="ispField">—</div>
+            <div class="info-label">Browser:</div>
+            <div id="browserField">—</div>
+            <div class="info-label">Operating System:</div>
+            <div id="osField">—</div>
+          </div>
+        </div>
+      </div>
+      <div id="privacyPage" class="page" aria-live="polite">
+        <h1 class="status-message">Privacy Policy</h1>
+        <div class="info-details" style="text-align: left;">
+          <p>
+            At <strong>does.network</strong>, we are committed to protecting your
+            privacy and ensuring transparency in how we handle data. This Privacy
+            Policy explains what information we display, how we retrieve it, and your rights
+            regarding that information. We do not collect, store, or share any personal data,
+            and all information presented to you is retrieved in real-time. By using does.network,
+            you acknowledge and agree to the practices outlined in this policy.
+          </p>
+          <p>
+            This policy has been designed to comply with relevant data protection
+            regulations, including the General Data Protection Regulation (GDPR) in the
+            European Union and the California Consumer Privacy Act (CCPA)/California Privacy
+            Rights Act (CPRA) in the United States. We also respect global privacy laws
+            applicable in other regions, as outlined below.
+          </p>
+          <h2>Legal Basis for Processing Data</h2>
+          <p>
+            Under GDPR, we process network-related data based on legitimate interest
+            (Article 6(1)(f)) as it is necessary to provide the requested service. By
+            using this website, you consent to the retrieval of your network details for
+            display purposes.
+          </p>
+          <h2>Information We Display</h2>
+          <p>
+            We show real-time network details, including your IP address (IPv4/IPv6),
+            active IP version, estimated location (network-based), ISP, browser, and operating system.
+            This information is only displayed to you and is not stored or shared.
+          </p>
+          <h2>How We Get This Information</h2>
+          <p>
+            We use public APIs, such as ipify and ipapi.co, to fetch IP, location and ISP details.
+            These third-party services may log requests temporarily but do not track users. You can review their
+            privacy policies at:
+          </p>
+          <ul>
+            <li>
+              <a href="https://www.ipify.org/" target="_blank"
+                >ipify Privacy Policy</a
+              >
+            </li>
+            <li>
+              <a href="https://ipapi.co/privacy/" target="_blank"
+                >ipapi.co Privacy Policy</a
+              >
+            </li>
+          </ul>
+          <h2>Usage Counter Data &amp; Minimal Logging</h2>
+          <p>
+            In order to better understand usage trends and improve the service, does.network employs a minimal logging mechanism.
+            This logging feature records only two pieces of information:
+          </p>
+          <ul>
+            <li>
+              <strong>UTC Timestamp:</strong> The date and time (in UTC) when the service was accessed, recorded in a human‐readable format
+              (e.g. <em>2025-02-07 19:32:49</em>).
+            </li>
+            <li>
+              <strong>Approximate Location:</strong> A rough estimation of your location (city, region, and country) based on your IP address,
+              obtained via a public IP lookup service. For example, the location might be reported as <em>"Fazakerley, England, United Kingdom"</em>.
+            </li>
+          </ul>
+          <p>
+            Please note that:
+          </p>
+          <ul>
+            <li>
+              <strong>IP Address Not Stored:</strong> Your full IP address is used solely to perform the lookup and is not logged or stored by does.network.
+            </li>
+            <li>
+              <strong>Data Minimization:</strong> Only the UTC timestamp and an approximate location are stored,
+              ensuring that no personally identifiable information is retained. This approach reflects our commitment to data minimization.
+            </li>
+            <li>
+              <strong>Legal Basis:</strong> This logging is carried out under the legitimate interest of monitoring and improving 
+              the performance of our service. No personal data is stored or processed beyond the abovementioned.
+            </li>
+          </ul>
+          <p>
+            We do not use this logged data to track individual users or build personal profiles, and it is automatically purged if older than 7 days.
+            For any questions about our data handling practices, please refer to our full Data Protection and Privacy guidelines or contact us.
+          </p>
+        </div>
+      </div>
+    </main>
+    <div class="bottom-tabs">
+      <button id="tabCheck" class="tab-btn active-tab">Check</button>
+      <button id="tabInfo" class="tab-btn">Details</button>
+      <button id="tabPrivacy" class="tab-btn">Privacy</button>
+      <div class="underline"></div>
+    </div>
+    <script>
+      // -----------------------------
+      // Global Counter Code
+      // -----------------------------
+      const usageCounter = document.getElementById("usageCounter");
+
+      fetch("counter.php")
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.count !== undefined) {
+            usageCounter.textContent =
+              "This tool has been used " + data.count + " times.";
+          } else {
+            usageCounter.style.display = "none";
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching usage counter:", error);
+          usageCounter.style.display = "none";
+        });
+
+      // -----------------------------
+      // Existing Functionality
+      // -----------------------------
+      const statusMessage = document.getElementById("statusMessage");
+      const checkButton = document.getElementById("checkButton");
+      const checkPage = document.getElementById("checkPage");
+      const infoPage = document.getElementById("infoPage");
+      const privacyPage = document.getElementById("privacyPage");
+      const tabCheck = document.getElementById("tabCheck");
+      const tabInfo = document.getElementById("tabInfo");
+      const tabPrivacy = document.getElementById("tabPrivacy");
+      const underline = document.querySelector(".underline");
+      const ipv4Field = document.getElementById("ipv4Field");
+      const ipv6Field = document.getElementById("ipv6Field");
+      const activeIPField = document.getElementById("activeIPField");
+      const locationField = document.getElementById("locationField");
+      const browserField = document.getElementById("browserField");
+      const ispField = document.getElementById("ispField");
+      const osField = document.getElementById("osField");
+
+      let cachedIP = null;
+      const modes = {
+        checking: {
+          bg: "var(--bg-checking)",
+          text: "var(--text-checking)",
+          msg: "Checking If Net Works..."
+        },
+        offline: {
+          bg: "var(--bg-offline)",
+          text: "var(--text-offline)",
+          msg: "No. Your Net Does Not Work."
+        },
+        online: {
+          bg: "var(--bg-online)",
+          text: "var(--text-online)",
+          msg: "Yes! Your Net Does Work!"
+        }
+      };
+
+      const updateBodyStyles = (bg, text) => {
+        document.body.style.backgroundColor = bg;
+        document.body.style.color = text;
+        checkButton.style.backgroundColor = text;
+        checkButton.style.color = bg;
+        // Update bottom-tabs background to match the current background for consistency.
+        const bottomTabs = document.querySelector(".bottom-tabs");
+        bottomTabs.style.backgroundColor = bg;
+      };
+
+      const setMode = (modeKey) => {
+        const { bg, text, msg } = modes[modeKey];
+        updateBodyStyles(bg, text);
+        statusMessage.textContent = msg;
+      };
+
+      const setButtonState = (active) => {
+        checkButton.classList.toggle("active", active);
+        checkButton.disabled = !active;
+        checkButton.setAttribute("aria-disabled", active ? "false" : "true");
+      };
+
+      const randomDelay = (min, max) => {
+        const delayMs = (Math.random() * (max - min) + min) * 1000;
+        return new Promise((resolve) => setTimeout(resolve, delayMs));
+      };
+
+      const checkInternetConnection = async () => {
+        setMode("checking");
+        setButtonState(false);
+        await randomDelay(0.1, 0.3);
+        let online = false;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 1000);
+          const response = await fetch("https://www.gstatic.com/generate_204", {
+            method: "HEAD",
+            mode: "no-cors",
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          if (response.ok || response.type === "opaque") {
+            online = true;
+          }
+        } catch (e) {}
+        if (!online) {
+          try {
+            const controller2 = new AbortController();
+            const timeout2 = setTimeout(() => controller2.abort(), 1000);
+            const response2 = await fetch("https://httpstat.us/204", {
+              method: "HEAD",
+              signal: controller2.signal
+            });
+            clearTimeout(timeout2);
+            if (response2.ok || response2.type === "opaque") {
+              online = true;
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        setMode(online ? "online" : "offline");
+        setButtonState(true);
+      };
+
+      const activatePage = (pageId) => {
+        [checkPage, infoPage, privacyPage].forEach((page) => {
+          page.classList.remove("active-page");
+        });
+        document.getElementById(pageId).classList.add("active-page");
+      };
+
+      const activateTab = (tabElement) => {
+        [tabCheck, tabInfo, tabPrivacy].forEach((btn) => {
+          btn.classList.remove("active-tab");
+        });
+        tabElement.classList.add("active-tab");
+        moveUnderline(tabElement);
+      };
+
+      const moveUnderline = (tabElement) => {
+        const rect = tabElement.getBoundingClientRect();
+        const parentRect = tabElement.parentElement.getBoundingClientRect();
+        const margin = 5;
+        underline.style.width = rect.width - 2 * margin + "px";
+        underline.style.left = rect.left - parentRect.left + margin + "px";
+      };
+
+      tabCheck.addEventListener("click", () => {
+        activateTab(tabCheck);
+        activatePage("checkPage");
+        checkInternetConnection();
+      });
+
+      tabInfo.addEventListener("click", async () => {
+        activateTab(tabInfo);
+        activatePage("infoPage");
+        await loadIPData();
+        loadISP();
+        loadBrowserInfo();
+        loadOSInfo();
+        await loadLocation();
+      });
+
+      tabPrivacy.addEventListener("click", () => {
+        activateTab(tabPrivacy);
+        activatePage("privacyPage");
+      });
+
+      [tabCheck, tabInfo, tabPrivacy].forEach((tab) => {
+        tab.addEventListener("mouseenter", () => {
+          moveUnderline(tab);
+        });
+        tab.addEventListener("mouseleave", () => {
+          const activeTab = document.querySelector(".tab-btn.active-tab");
+          moveUnderline(activeTab);
+        });
+      });
+
+      const loadIPData = async () => {
+        try {
+          const res4 = await fetch("https://api.ipify.org?format=json");
+          const data4 = await res4.json();
+          ipv4Field.textContent = data4.ip;
+        } catch (e) {
+          console.error(e);
+          ipv4Field.textContent = "Unavailable";
+        }
+        try {
+          const res6 = await fetch("https://api64.ipify.org?format=json");
+          const data6 = await res6.json();
+          ipv6Field.textContent = data6.ip;
+        } catch (e) {
+          console.error(e);
+          ipv6Field.textContent = "Unavailable";
+        }
+        if (
+          ipv6Field.textContent !== "Unavailable" &&
+          ipv6Field.textContent !== "—"
+        ) {
+          activeIPField.textContent = "IPv6";
+        } else {
+          activeIPField.textContent = "IPv4";
+        }
+      };
+
+      const getBrowserInfo = () => {
+        const ua = navigator.userAgent;
+        const browserData = ua.match(
+          /(Chrome|Firefox|Safari|OPR|Edg(?=\/))\/?\s*(\d+(\.\d+)*)/i
+        );
+        if (browserData) {
+          let browserName = browserData[1];
+          if (browserName === "OPR") browserName = "Opera";
+          if (browserName === "Edg") browserName = "Edge";
+          const fullVersion = browserData[2];
+          const majorVersion = fullVersion.split(".")[0];
+          return `${browserName} ${majorVersion}`;
+        }
+        return navigator.userAgent;
+      };
+
+      const loadBrowserInfo = () => {
+        browserField.textContent = getBrowserInfo();
+      };
+
+      const getOSInfo = () => {
+        const ua = navigator.userAgent;
+        let os = "Unknown OS";
+        if (ua.indexOf("Win") !== -1) {
+          os = "Windows";
+        } else if (ua.indexOf("Mac") !== -1) {
+          os = "MacOS";
+        } else if (ua.indexOf("X11") !== -1) {
+          os = "UNIX";
+        } else if (ua.indexOf("Linux") !== -1) {
+          os = "Linux";
+        } else if (/Android/.test(ua)) {
+          os = "Android";
+        } else if (/iPhone|iPad|iPod/.test(ua)) {
+          os = "iOS";
+        }
+        return os;
+      };
+
+      const loadOSInfo = () => {
+        osField.textContent = getOSInfo();
+      };
+
+      const loadLocation = async () => {
+        try {
+          const res = await fetch("https://ipapi.co/json/");
+          const data = await res.json();
+          const locationStr = [data.city, data.region, data.country_name]
+            .filter(Boolean)
+            .join(", ");
+          locationField.textContent = locationStr || "Unavailable";
+          ispField.textContent = data.org || "Unavailable";
+        } catch (e) {
+          console.error(e);
+          locationField.textContent = "Unavailable";
+          ispField.textContent = "Unavailable";
+        }
+      };
+
+      const loadISP = () => {
+        // ISP data is loaded with location data.
+      };
+
+      window.addEventListener("load", async () => {
+        try {
+          const data = await (
+            await fetch("https://api.ipify.org?format=json")
+          ).json();
+          cachedIP = data.ip;
+        } catch (e) {
+          console.error(e);
+          cachedIP = "Unavailable";
+        }
+        await loadIPData();
+        loadISP();
+        loadBrowserInfo();
+        loadOSInfo();
+        await loadLocation();
+        if (tabCheck.classList.contains("active-tab")) {
+          checkInternetConnection();
+        }
+        moveUnderline(document.querySelector(".tab-btn.active-tab"));
+      });
+
+      checkButton.addEventListener("click", () => {
+        if (checkButton.classList.contains("active")) {
+          checkInternetConnection();
+        }
+      });
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .then((reg) => console.log("Service Worker registered:", reg))
+            .catch((err) =>
+              console.error("Service Worker registration failed:", err)
+            );
+        });
+      }
+    </script>
+  
+<script type="text/javascript" src="/unprotected/back_to_spaceship.js?hash=4975d460e508829e8fb64d3962bc44ad35f3a95a"></script>
+
+
+<script src="/unprotected/hc-filters.js?hash=e34e4d24-1484-460e-950f-c97beda1f9e7"> </script>
+</body>
+</html>
